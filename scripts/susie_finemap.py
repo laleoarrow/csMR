@@ -47,7 +47,7 @@ def get_maf_list(outdir, coverage):
 
 
 def task_susie(rdata_path, data_type, gwas_type): 
-    os.system("Rscript scripts/susie_finemap_calculate.r -r %(rdata_path)s -t %(data_type)s -c %(coverage)s -g %(gwas_type)s" % {"rdata_path": rdata_path, "data_type": data_type,"coverage":coverage, "gwas_type":gwas_type})
+    os.system("export OMP_NUM_THREADS=1; export MKL_NUM_THREADS=1; Rscript scripts/susie_finemap_calculate.r -r %(rdata_path)s -t %(data_type)s -c %(coverage)s -g %(gwas_type)s" % {"rdata_path": rdata_path, "data_type": data_type,"coverage":coverage, "gwas_type":gwas_type})
     if os.path.exists(rdata_path.replace("raw.RData", coverage+".susie.RData")):
         os.system("rm %(rdata_path)s"%{"rdata_path":rdata_path})
 
