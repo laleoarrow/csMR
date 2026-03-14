@@ -6,9 +6,7 @@ command<-matrix(c(
                   'exp_ma_file', 'e', 1, 'character', 'input GWAS .ma file.',
                   "snp_file",'s',1,'character','colocalized SNP list file.',
                   "ref_genotype",'r',1,'character',"provide path to reference genotype.",
-		  'duplication_path','d',1,'character','provide path to duplicated snp list. If not available input "None".',
-                  'clump_p1', 'p', 1, 'double', 'PLINK --clump-p1 threshold.',
-                  'clump_p2', 'q', 1, 'double', 'PLINK --clump-p2 threshold.'
+		  'duplication_path','d',1,'character','provide path to duplicated snp list. If not available input "None".'
                   ),byrow=T,ncol=5)
 
 args<-getopt(command)
@@ -17,17 +15,17 @@ if(!is.null(args$help) ){
         cat(paste(help,"do plink clumping from input IVs.\n"))
 }
 
-Clump <- function(exp_ma_file,ref_path,duplication_path,clump_out,clump_p1,clump_p2){
+Clump <- function(exp_ma_file,ref_path,duplication_path,clump_out){
 		if(duplication_path != paste0(getwd(),"/None")){
 			for (n in 1:22){
 				dup_snp_file = list.files(pattern = paste0("chr",n,"(\\D+|$)"), path = duplication_path, ignore.case=T)
 				plink_file = gsub("\\.bim","",list.files(pattern = paste0("chr",n,"\\D+.*bim$"), path = ref_path, ignore.case=T))
-				system(paste0('plink --silent --bfile ', ref_path, '/', plink_file,' --clump ',exp_ma_file,' --clump-field P --clump-kb 10000 --clump-p1 ', clump_p1, ' --clump-p2 ', clump_p2, ' --clump-r2 0.001 --out ',clump_out, '.chr', n,' --exclude ', duplication_path,'/',dup_snp_file))
+				system(paste0('plink --silent --bfile ', ref_path, '/', plink_file,' --clump ',exp_ma_file,' --clump-field P --clump-kb 10000 --clump-p1 5e-8 --clump-p2 0.01 --clump-r2 0.001 --out ',clump_out, '.chr', n,' --exclude ', duplication_path,'/',dup_snp_file))
 			}
 		}else{
 			for (n in 1:22){
 				plink_file = gsub("\\.bim","",list.files(pattern = paste0("chr",n,"\\D+.*bim$"), path = ref_path, ignore.case=T))
-				system(paste0('plink --silent --bfile ', ref_path, '/', plink_file,' --clump ',exp_ma_file,' --clump-field P --clump-kb 10000 --clump-p1 ', clump_p1, ' --clump-p2 ', clump_p2, ' --clump-r2 0.001 --out ',clump_out, '.chr', n))
+				system(paste0('plink --silent --bfile ', ref_path, '/', plink_file,' --clump ',exp_ma_file,' --clump-field P --clump-kb 10000 --clump-p1 5e-8 --clump-p2 0.01 --clump-r2 0.001 --out ',clump_out, '.chr', n))
 			}
 		}
 }
@@ -42,8 +40,6 @@ if (file.exists(paste0(getwd(),"/",exp_ma_file))){
 snp_file = args$snp_file
 ref_path = args$ref_genotype
 duplication_path = args$duplication_path
-clump_p1 <- if (is.null(args$clump_p1)) 5e-8 else as.numeric(args$clump_p1)
-clump_p2 <- if (is.null(args$clump_p2)) 0.01 else as.numeric(args$clump_p2)
 outdir = paste0(dirname(snp_file),'/clump')
 dir.create(outdir)
 exp_ma_data <- fread(file = exp_ma_file,header = T,data.table = F)
@@ -54,7 +50,7 @@ if (file.info(snp_file)$size == 0){
 	match <- match(snp_list, exp_ma_data$SNP) %>% na.omit
 	exp_ma_data <- exp_ma_data[match,]
 	write.table(exp_ma_data,file = paste0(outdir,'/',gsub("\\.IV", ".ma", basename(snp_file))),row.names = F,col.names = T,sep = "\t",quote = F)
-		Clump(exp_ma_file = paste0(outdir,'/',gsub("\\.IV", ".ma", basename(snp_file))), ref_path = ref_path, duplication_path = duplication_path, clump_out = paste0(dirname(snp_file),'/clump/',gsub("\\.IV", ".clump", basename(snp_file))), clump_p1 = clump_p1, clump_p2 = clump_p2)
+		Clump(exp_ma_file = paste0(outdir,'/',gsub("\\.IV", ".ma", basename(snp_file))), ref_path = ref_path, duplication_path = duplication_path, clump_out = paste0(dirname(snp_file),'/clump/',gsub("\\.IV", ".clump", basename(snp_file))))
 	df = data.frame()
 	files = list.files(outdir, pattern=paste0("^",gsub("\\.IV", "", basename(snp_file)),"\\.clump.chr.+\\.clumped$"))
 	for (file in files){

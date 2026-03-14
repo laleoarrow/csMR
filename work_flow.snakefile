@@ -36,10 +36,6 @@ THREADS = config['COLOC_SETTING']['THREADS']
 window_size = config['COLOC_SETTING']['WINDOW_SIZE_BP']
 COVERAGES = str(config['COLOC_SETTING']['COVERAGES']).split(",")
 COLOC_CUTOFF = config['COLOC_SETTING']['CUTOFF']
-IV_SELECTION = config.get('IV_SELECTION', {})
-EXPOSURE_P_THRESHOLD = str(IV_SELECTION.get('EXPOSURE_P_THRESHOLD', '5e-8'))
-CLUMP_P1 = str(IV_SELECTION.get('CLUMP_P1', '5e-8'))
-CLUMP_P2 = str(IV_SELECTION.get('CLUMP_P2', '0.01'))
 
 OUTCOME_DIR = config['OUTCOME_DIR']
 OUTCOMRS = [os.path.splitext(file)[0] for file in os.listdir(OUTCOME_DIR)]
@@ -239,12 +235,11 @@ rule snp_filter:
 		coloc_out = "{BASE_OUTPUT_DIR}/COLOC/Susie_coloc.{run_prefix}.results.coverage.{coverage}.PPH4.{coloc_cutoff}",
 		gwas_ma_file = lambda wildcards: GWAS_SUMSTATS[wildcards.run_prefix]['path'],
 		cells = ",".join(CELL_TYPES),
-		outdir = BASE_OUTPUT_DIR,
-		exposure_p_threshold = EXPOSURE_P_THRESHOLD
+		outdir = BASE_OUTPUT_DIR
 	#	conda:
 	#		"envs/envR4.yml"
 	shell:
-		"Rscript scripts/IV_select.r -r {params.coloc_out} -e {params.gwas_ma_file} -c {params.cells} -o {params.outdir} -p {params.exposure_p_threshold}"
+		"Rscript scripts/IV_select.r -r {params.coloc_out} -e {params.gwas_ma_file} -c {params.cells} -o {params.outdir}"
 
 rule clump:
 	input:
@@ -255,13 +250,11 @@ rule clump:
 		exp_ma_file = lambda wildcards: GWAS_SUMSTATS[wildcards.run_prefix]['path'],
 		snp_file = "{BASE_OUTPUT_DIR}/MR/Susie_coloc.{run_prefix}.results.coverage.{coverage}.PPH4.{coloc_cutoff}.{cell_type}.IV",
 		reference_genotype = GWAS_REFERENCE_PATH,
-		reference_dupliaction_path = GWAS_REFERENCE_DUP,
-		clump_p1 = CLUMP_P1,
-		clump_p2 = CLUMP_P2
+		reference_dupliaction_path = GWAS_REFERENCE_DUP
 	#	conda:
 	#		"envs/envR4.yml"
 	shell:
-		"Rscript scripts/clump.r -e {params.exp_ma_file} -s {params.snp_file} -r {params.reference_genotype} -d {params.reference_dupliaction_path} -p {params.clump_p1} -q {params.clump_p2}"
+		"Rscript scripts/clump.r -e {params.exp_ma_file} -s {params.snp_file} -r {params.reference_genotype} -d {params.reference_dupliaction_path}"
 
 rule MR:
 	input:
