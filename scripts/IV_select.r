@@ -8,7 +8,8 @@ command<-matrix(c(
                   'coloc_res', 'r', 1, 'character', 'susie coloc result.',
                   'exp_ma_file', 'e', 1, 'character', 'input GWAS .ma file.',
                   'cells','c',1,'character','all tested cells.',
-                  'outdir','o',1,'character',"output directory."
+                  'outdir','o',1,'character',"output directory.",
+                  'exposure_p_threshold','p',1,'double','exposure P-value threshold for IV filtering.'
                   ),byrow=T,ncol=5)
 args<-getopt(command)
 if(!is.null(args$help) ){
@@ -22,6 +23,7 @@ if (file.exists(paste0(getwd(),"/",exp_ma_file))){
 }
 cells = args$cells
 outdir = args$outdir
+exposure_p_threshold <- if (is.null(args$exposure_p_threshold)) 5e-8 else as.numeric(args$exposure_p_threshold)
 ################################################
 outdir = paste0(outdir, "/MR")
 if (!dir.exists(paste0(outdir))){
@@ -38,7 +40,7 @@ tryCatch({
 confounders <- c("smoking","alcohol","education","college","university","smoke","drink","drinking")
 exp_ma_data <- fread(file = exp_ma_file, header = T, data.table = F, select = c("SNP", "P"))
 exp_ma_data <- exp_ma_data[na.omit(match(data[,8],exp_ma_data$SNP)),] %>% unique()
-exp_ma_data <- exp_ma_data[exp_ma_data$P < 5e-8,]
+exp_ma_data <- exp_ma_data[exp_ma_data$P < exposure_p_threshold,]
 #if(nrow(exp_ma_data) == 0){
 #	confounder_snps=c()
 #	print("Notice: No availuable IVs!")
